@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" type="image/png" href="visithosp-icone.png">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+<title>VisitHosp</title>
+<meta name="description" content="VisitHosp: gestão de visitas hospitalares com convite do paciente, token de acesso, triagem e auditoria.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: faixa azul-marinho do app como abertura, depois seções claras em coluna única de 1120px; cartões só onde há objeto real (token, horários). */
+:root{
+  --bg:#F4F5FA;
+  --surface:#FFFFFF;
+  --fg:#101529;
+  --muted:#4B5670;
+  --line:#DCE3EC;
+  --brand:#09609A;
+  --brand-2:#1780C5;
+  --brand-soft:#E4F0FD;
+  --band:#101529;
+  --band-fg:#FFFFFF;
+  --band-muted:#B8C4D8;
+  --band-line:#2A3350;
+  --ok:#1E8A5A; --ok-soft:#DDF3E8;
+  --warn:#B86E0B; --warn-soft:#FCEFD9;
+  --bad:#C93A3A; --bad-soft:#FBE3E3;
+  --font:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0B0F1E; --surface:#141A2E; --fg:#EEF2F8; --muted:#A3AEC4; --line:#262F4A;
+  --brand:#4FA3E3; --brand-2:#6FB3E8; --brand-soft:#132A44;
+  --band:#060914; --band-line:#1F2740;
+  --ok:#4CC28A; --ok-soft:#123426; --warn:#F0B354; --warn-soft:#3A2A10; --bad:#F07575; --bad-soft:#3B1717;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B0F1E; --surface:#141A2E; --fg:#EEF2F8; --muted:#A3AEC4; --line:#262F4A;
+  --brand:#4FA3E3; --brand-2:#6FB3E8; --brand-soft:#132A44;
+  --band:#060914; --band-line:#1F2740;
+  --ok:#4CC28A; --ok-soft:#123426; --warn:#F0B354; --warn-soft:#3A2A10; --bad:#F07575; --bad-soft:#3B1717;
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0;line-height:1.12;text-wrap:balance;letter-spacing:-.02em}
+p{margin:0;text-wrap:pretty}
+a{color:var(--brand)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--brand-2);outline-offset:3px;border-radius:8px}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+.eyebrow{font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--brand)}
+
+/* Topo + abertura */
+.band{background:var(--band);color:var(--band-fg)}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:22px}
+.brand{display:flex;align-items:center;gap:12px;color:var(--band-fg);text-decoration:none;font-weight:800;font-size:22px;letter-spacing:-.02em}
+.brand span{color:#6FB3E8}
+.top a.pill{color:var(--band-fg);text-decoration:none;font-weight:600;font-size:15px;padding:10px 18px;border:1px solid var(--band-line);border-radius:999px}
+.top a.pill:hover{background:#1A2240}
+.hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:56px;align-items:center;padding-block:48px 88px}
+.hero h1{font-size:clamp(42px,6.4vw,76px);font-weight:800;letter-spacing:-.035em}
+.hero h1 em{font-style:normal;color:#6FB3E8}
+.hero .lede{margin-top:22px;font-size:19px;color:var(--band-muted);max-width:34em}
+.ctas{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:12px 22px;border-radius:10px;font-weight:700;font-size:16px;text-decoration:none}
+.btn.primary{background:#1780C5;color:#FFFFFF}
+.btn.primary:hover{background:#09609A}
+.btn.ghost{color:var(--band-fg);border:1px solid var(--band-line)}
+.btn.ghost:hover{background:#1A2240}
+
+/* Cartão do token (objeto real do produto) */
+.token{background:#FFFFFF;color:#101529;border-radius:18px;padding:28px;box-shadow:0 30px 60px -20px rgba(0,0,0,.55)}
+.token .row{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.token .label{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#4B5670}
+.token .tag{font-size:12px;font-weight:700;color:#1E8A5A;background:#DDF3E8;padding:4px 10px;border-radius:999px}
+.code{display:flex;align-items:center;gap:10px;margin-top:14px}
+.code b{flex:1;font-family:var(--mono);font-size:clamp(22px,3vw,30px);font-weight:700;letter-spacing:.08em;text-align:center;padding:14px 0;border:1.5px solid #CFE0F0;border-radius:10px;background:#F4F8FC;color:#09609A}
+.code i{font-style:normal;color:#8A96AC;font-weight:700}
+.token .meta{margin-top:16px;padding-top:16px;border-top:1px solid #E6EBF2;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;font-size:14px}
+.token .meta small{display:block;font-size:12px;color:#4B5670}
+.token .meta strong{font-weight:600}
+.token .note{margin-top:16px;font-size:13px;color:#4B5670;background:#E4F0FD;border-radius:10px;padding:10px 12px}
+
+/* Seções */
+section.s{padding-block:88px}
+.s-head{max-width:46em;display:grid;gap:14px;margin-bottom:44px}
+.s-head h2{font-size:clamp(30px,4vw,44px);font-weight:800}
+.s-head p{color:var(--muted);font-size:18px}
+
+/* Passos: sequência real da visita */
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;counter-reset:p}
+.steps li{counter-increment:p;display:grid;gap:10px;align-content:start;padding-top:20px;border-top:3px solid var(--line)}
+.steps li:first-child{border-top-color:var(--brand)}
+.steps li::before{content:"Passo " counter(p);font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--brand)}
+.steps h3{font-size:21px;font-weight:700}
+.steps p{color:var(--muted);font-size:16px}
+
+/* Duas frentes */
+.split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.side{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:32px;display:grid;gap:18px;align-content:start}
+.side h3{font-size:24px;font-weight:800}
+.side ul{margin:0;padding:0;list-style:none;display:grid;gap:14px}
+.side li{display:grid;grid-template-columns:22px minmax(0,1fr);gap:12px;font-size:16px}
+.side li svg{margin-top:3px}
+.side li b{display:block;font-weight:700}
+.side li span{color:var(--muted)}
+
+/* Horários do leito */
+.slots{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:24px;display:grid;gap:10px}
+.slots .cap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:14px;color:var(--muted);margin-bottom:6px}
+.slot{display:grid;grid-template-columns:118px minmax(0,1fr) 52px 128px;gap:14px;align-items:center;font-size:14px}
+.slot time{font-family:var(--mono);font-weight:500;font-variant-numeric:tabular-nums}
+.bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px}
+.slot .n{color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.chip{justify-self:start;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px}
+.chip.ok{color:var(--ok);background:var(--ok-soft)}
+.chip.warn{color:var(--warn);background:var(--warn-soft)}
+.chip.bad{color:var(--bad);background:var(--bad-soft)}
+.slot-grid{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:48px;align-items:center}
+.slot-grid .s-head{margin-bottom:0}
+
+/* LGPD */
+.lgpd{background:var(--brand-soft);border-radius:20px;padding:48px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:40px}
+.lgpd h2{font-size:clamp(28px,3.6vw,40px);font-weight:800}
+.lgpd ul{margin:0;padding:0;list-style:none;display:grid;gap:18px}
+.lgpd li{display:grid;gap:4px}
+.lgpd li b{font-size:17px}
+.lgpd li span{color:var(--muted);font-size:16px}
+
+/* Contato */
+.contact{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:40px;align-items:start}
+.contact h2{font-size:clamp(32px,4.4vw,52px);font-weight:800}
+.contact p{color:var(--muted);margin-top:14px;font-size:18px}
+.card-c{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:28px;display:grid;gap:16px}
+.card-c dl{margin:0;display:grid;gap:14px}
+.card-c-title{font-weight:700;font-size:17px}
+.form-cta{display:grid;gap:12px;margin-top:28px;justify-items:start}
+.form-btn{background:var(--brand);color:#FFFFFF;font-size:17px;min-height:54px;padding:14px 26px}
+.form-btn:hover{background:var(--fg);color:var(--bg)}
+.form-cta span{font-size:14px;color:var(--muted);max-width:30em}
+.card-c dt{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.card-c dd{margin:2px 0 0;font-size:18px;font-weight:600;user-select:all;overflow-wrap:anywhere}
+
+/* Convite */
+.invite{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:26px;display:grid;gap:18px;box-shadow:0 20px 40px -24px rgba(16,21,41,.35)}
+.inv-head{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px}
+.inv-head em{margin-left:auto;font-style:normal;font-size:12px;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 10px}
+.inv-msg{font-size:18px;line-height:1.5}
+.inv-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:16px;border-radius:12px;background:var(--brand-soft)}
+.inv-grid small{display:block;font-size:12px;color:var(--muted)}
+.inv-grid strong{font-weight:600;font-size:15px}
+.inv-grid .mono{font-family:var(--mono);color:var(--brand);letter-spacing:.04em}
+.inv-btn{justify-self:start;background:var(--brand);color:#FFFFFF;font-weight:700;font-size:15px;padding:12px 20px;border-radius:10px}
+
+/* Dados */
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:28px;display:grid;gap:10px;align-content:start}
+.stat .big{font-size:clamp(40px,5vw,56px);font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--brand);font-variant-numeric:tabular-nums}
+.stat .big span{font-size:20px;font-weight:600;color:var(--muted);letter-spacing:0}
+.stat h3{font-size:19px;font-weight:700}
+.stat p{color:var(--muted);font-size:15px}
+.stat .src{font-size:13px;font-weight:600;margin-top:4px}
+.stat p.link{color:var(--fg);background:var(--brand-soft);border-radius:10px;padding:12px 14px;margin-top:4px}
+.stat p.link b{display:block;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--brand);margin-bottom:4px}
+
+footer{border-top:1px solid var(--line);padding-block:28px;font-size:14px;color:var(--muted)}
+footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
+
+@media (max-width:900px){
+  .hero,.slot-grid,.lgpd,.contact,.split{grid-template-columns:minmax(0,1fr)}
+  .hero{gap:40px;padding-block:24px 64px}
+  .steps{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .lgpd{padding:32px 24px}
+  section.s{padding-block:64px}
+}
+@media (max-width:560px){
+  .steps{grid-template-columns:minmax(0,1fr)}
+  .stats,.inv-grid{grid-template-columns:minmax(0,1fr)}
+  .slot{grid-template-columns:96px minmax(0,1fr) auto;row-gap:6px}
+  .slot .chip{grid-column:2 / 4;justify-self:end}
+  .top a.pill{padding:8px 14px;font-size:14px}
+  .side{padding:24px}
+}
+@media (prefers-reduced-motion:no-preference){
+  .token{animation:rise .7s cubic-bezier(.2,.7,.2,1) both}
+  @keyframes rise{from{transform:translateY(14px) rotate(-1deg)}to{transform:none}}
+}
+</style>
+</head>
+<body>
+
+<div class="band">
+  <div class="wrap">
+    <header class="top">
+      <a class="brand" href="#inicio" aria-label="VisitHosp, início">
+        <svg width="36" height="36" viewBox="0 0 64 64" aria-hidden="true"><path d="M22 4 H42 V22 H60 V42 H42 V60 H22 V42 H4 V22 H22 Z" fill="#1780C5"/><path d="M24.5 24 L32 39.5 L39.5 24" fill="none" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="square"/></svg>
+        <div>Visit<span>Hosp</span></div>
+      </a>
+      <a class="pill" href="#contato">Fale com a gente</a>
+    </header>
+
+    <div class="hero" id="inicio">
+      <div>
+        <p class="eyebrow" style="color:#6FB3E8">Gestão de visitas hospitalares</p>
+        <h1 style="margin-top:16px">Visitar ficou <em>simples.</em></h1>
+        <p class="lede">A VisitHosp organiza a visita do começo ao fim. O paciente ou o acompanhante convida quem quer receber, e o visitante recebe o token pelo convite. Depois é só agendar o horário, fazer a triagem de saúde e entrar. A equipe acompanha tudo em um painel, com histórico e auditoria.</p>
+        <div class="ctas">
+          <a class="btn primary" href="#como-funciona">Ver como funciona</a>
+          <a class="btn ghost" href="#contato">Quero conhecer</a>
+        </div>
+      </div>
+
+      <figure class="token" style="margin:0" aria-label="Exemplo de token de acesso">
+        <div class="row">
+          <span class="label">Token de acesso</span>
+          <span class="tag">Válido</span>
+        </div>
+        <div class="code"><b>A3F</b><i>—</i><b>7K2</b><i>—</i><b>9MX</b></div>
+        <div class="meta">
+          <div><small>Leito</small><strong>101 · Ala Clínica Médica</strong></div>
+          <div><small>Horário</small><strong>09:30 – 10:00</strong></div>
+        </div>
+        <p class="note">O token chega pelo convite do paciente ou do acompanhante. Sem ele, nenhum dado do paciente aparece.</p>
+      </figure>
+    </div>
+  </div>
+</div>
+
+<main>
+  <section class="s" id="como-funciona">
+    <div class="wrap">
+      <div class="s-head">
+        <p class="eyebrow">Como funciona</p>
+        <h2>Quatro passos entre a porta e o leito</h2>
+        <p>O visitante faz tudo pelo celular. Ninguém precisa de cadastro prévio no hospital nem de fila no balcão.</p>
+      </div>
+      <ol class="steps">
+        <li><h3>Receba o convite</h3><p>O paciente ou o acompanhante convida quem quer receber. O token de acesso chega junto com o convite.</p></li>
+        <li><h3>Escolha o horário</h3><p>O visitante vê os horários livres do leito e agenda. Cada horário tem limite de pessoas.</p></li>
+        <li><h3>Faça a triagem</h3><p>Questionário de saúde, documento com foto e selfie biométrica, validados antes da visita.</p></li>
+        <li><h3>Entre e saia</h3><p>Check-in e check-out ficam registrados, com data, hora e quem visitou.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="s" style="padding-top:0" id="convites">
+    <div class="wrap slot-grid">
+      <div class="s-head">
+        <p class="eyebrow">Convites</p>
+        <h2>Quem está internado escolhe quem visita</h2>
+        <p>O paciente, ou o acompanhante quando o paciente não puder, envia o convite para as pessoas que quer receber. Cada convidado recebe o próprio token e segue o passo a passo até o leito. Quem não foi convidado não tem acesso.</p>
+      </div>
+      <figure class="invite" aria-label="Exemplo de convite de visita">
+        <div class="inv-head">
+          <svg width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><path d="M22 4 H42 V22 H60 V42 H42 V60 H22 V42 H4 V22 H22 Z" fill="#09609A"/><path d="M24.5 24 L32 39.5 L39.5 24" fill="none" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="square"/></svg>
+          <span>Convite de visita</span>
+          <em>Exemplo</em>
+        </div>
+        <p class="inv-msg"><b>Ana Ribeiro</b>, acompanhante de <b>Carlos Eduardo Ribeiro</b>, convidou você para uma visita.</p>
+        <div class="inv-grid">
+          <div><small>Local</small><strong>Leito 101 · Ala Clínica Médica · Bloco A</strong></div>
+          <div><small>Seu token</small><strong class="mono">A3F — 7K2 — 9MX</strong></div>
+        </div>
+        <span class="inv-btn">Agendar minha visita</span>
+      </figure>
+    </div>
+  </section>
+
+  <section class="s" style="padding-top:0">
+    <div class="wrap slot-grid">
+      <div class="s-head">
+        <p class="eyebrow">Agenda do leito</p>
+        <h2>Nada de quarto lotado</h2>
+        <p>Cada leito tem horários com número máximo de visitantes. Quem vai visitar vê na hora o que está livre, e a equipe não precisa controlar isso no papel.</p>
+      </div>
+      <div class="slots" role="img" aria-label="Exemplo de horários de um leito: 09:00 lotado, 09:30 livre, 10:00 e 10:30 parcialmente ocupados, 14:00 livre">
+        <div class="cap"><span>Leito 101 · Ala Clínica Médica</span><span>Exemplo</span></div>
+        <div class="slot"><time>09:00 – 09:30</time><div class="bar"><i style="width:100%;background:var(--bad)"></i></div><span class="n">3 de 3</span><span class="chip bad">Lotado</span></div>
+        <div class="slot"><time>09:30 – 10:00</time><div class="bar"><i style="width:0"></i></div><span class="n">0 de 3</span><span class="chip ok">Livre</span></div>
+        <div class="slot"><time>10:00 – 10:30</time><div class="bar"><i style="width:33%;background:var(--warn)"></i></div><span class="n">1 de 3</span><span class="chip warn">Parcial</span></div>
+        <div class="slot"><time>10:30 – 11:00</time><div class="bar"><i style="width:33%;background:var(--warn)"></i></div><span class="n">1 de 3</span><span class="chip warn">Parcial</span></div>
+        <div class="slot"><time>14:00 – 14:30</time><div class="bar"><i style="width:0"></i></div><span class="n">0 de 3</span><span class="chip ok">Livre</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="s" style="padding-top:0">
+    <div class="wrap">
+      <div class="s-head">
+        <p class="eyebrow">Para quem</p>
+        <h2>Feito para quem visita e para quem cuida</h2>
+      </div>
+      <div class="split">
+        <div class="side">
+          <h3>Para o visitante</h3>
+          <ul>
+            <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true" style="color:var(--brand)"><path d="M5 12l5 5 9-10"/></svg><div><b>Status do paciente</b><span>Veja se o paciente está disponível para receber visita.</span></div></li>
+            <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true" style="color:var(--brand)"><path d="M5 12l5 5 9-10"/></svg><div><b>Localização do leito</b><span>Saiba o bloco, a ala e o quarto antes de chegar.</span></div></li>
+            <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true" style="color:var(--brand)"><path d="M5 12l5 5 9-10"/></svg><div><b>Regulamento e horários</b><span>As regras da visita sempre à mão, sem precisar perguntar.</span></div></li>
+            <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true" style="color:var(--brand)"><path d="M5 12l5 5 9-10"/></svg><div><b>Meus agendamentos</b><span>Acompanhe, remarque ou cancele a sua visita.</span></div></li>
+          </ul>
+        </div>
+        <div class="side">
+          <h3>Para a equipe do hospital</h3>
+          <ul>
+            <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true" style="color:var(--brand)"><path d="M5 12l5 5 9-10"/></svg><div><b>Painel de gestão</b><span>Visitantes e acessos do dia em uma só tela.</span></div></li>
+            <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true" style="color:var(--brand)"><path d="M5 12l5 5 9-10"/></svg><div><b>Auditoria de check-in e check-out</b><span>Quem entrou, quando entrou e quando saiu.</span></div></li>
+            <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true" style="color:var(--brand)"><path d="M5 12l5 5 9-10"/></svg><div><b>Visitantes por turno</b><span>Manhã, tarde, noite e madrugada, com totais por período.</span></div></li>
+            <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true" style="color:var(--brand)"><path d="M5 12l5 5 9-10"/></svg><div><b>Cadastro vinculado ao leito</b><span>Cada visitante fica ligado ao paciente e ao leito certo.</span></div></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="s" style="padding-top:0">
+    <div class="wrap">
+      <div class="lgpd">
+        <div style="display:grid;gap:14px;align-content:start">
+          <p class="eyebrow">Segurança e LGPD</p>
+          <h2>Os dados do paciente só aparecem para quem tem o token</h2>
+        </div>
+        <ul>
+          <li><b>Só entra quem foi convidado</b><span>O token vem do convite do paciente ou do acompanhante. Sem ele, nenhum dado do paciente é exibido.</span></li>
+          <li><b>Consentimento registrado</b><span>O visitante aceita o termo de tratamento de dados no cadastro, como pede a LGPD.</span></li>
+          <li><b>Triagem com bloqueio</b><span>Respostas de risco impedem a visita no dia, e dados falsos bloqueiam o token automaticamente.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="s" id="dados" style="padding-top:0">
+    <div class="wrap">
+      <div class="s-head">
+        <p class="eyebrow">Por que isso importa</p>
+        <h2>Os problemas que a VisitHosp resolve, em números</h2>
+        <p>Cada dado vem de um estudo ou levantamento público e mostra um problema real das visitas no hospital. Embaixo de cada um, o que a VisitHosp faz a respeito. Os números não são resultados medidos da VisitHosp.</p>
+      </div>
+      <div class="stats">
+        <article class="stat">
+          <p class="big">4,8 h <span>vs 1,4 h</span></p>
+          <h3>Mais tempo de visita deixa a família mais tranquila</h3>
+          <p>Em 36 UTIs brasileiras, a visita flexível (até 12 h por dia) teve média de 4,8 h diárias, contra 1,4 h no modelo restrito, e reduziu os sintomas de ansiedade e depressão dos familiares. O desafio para o hospital é abrir mais horários sem perder o controle de quem entra.</p>
+          <p class="link"><b>Na VisitHosp</b>O hospital pode oferecer mais horários com segurança, porque cada horário tem limite de pessoas e só entra quem agendou. A família vê os horários livres, o status do paciente e o caminho até o leito antes de sair de casa.</p>
+          <a class="src" href="https://experts.mcmaster.ca/display/publication1654845">Rosa et al., ICU Visits, JAMA, 2019</a>
+        </article>
+        <article class="stat">
+          <p class="big">71,6%</p>
+          <h3>dos profissionais de saúde já sofreram agressão, muitas vezes de familiares e acompanhantes</h3>
+          <p>Pesquisa com 6.832 profissionais em São Paulo. Depois dos próprios pacientes, familiares e acompanhantes são os que mais agridem.</p>
+          <p class="link"><b>Na VisitHosp</b>Ninguém entra como anônimo. Cada visitante foi convidado pelo paciente ou pelo acompanhante, passou por documento com foto e selfie e tem entrada e saída registradas. A equipe sabe quem está em cada quarto.</p>
+          <a class="src" href="https://www.cofen.gov.br/sete-em-cada-dez-profissionais-de-saude-ja-sofreram-agressao-mostra-pesquisa_65574.html">Cremesp, Coren-SP e CRF-SP, 2018</a>
+        </article>
+        <article class="stat">
+          <p class="big">3.981</p>
+          <h3>boletins de ocorrência por agressão a médicos em 2023</h3>
+          <p>Registros em unidades de saúde públicas e privadas do Brasil, cerca de 11 por dia. De 2013 a 2024, foram 38 mil.</p>
+          <p class="link"><b>Na VisitHosp</b>A auditoria de check-in e check-out mostra quem estava no hospital, em qual leito e em que horário. Quando algo acontece, a equipe tem o registro na mão.</p>
+          <a class="src" href="https://portal.cfm.org.br/noticias/cfm-apresenta-dados-de-aumento-da-violencia-contra-medicos-para-deputados/">Conselho Federal de Medicina</a>
+        </article>
+        <article class="stat">
+          <p class="big">33,1%</p>
+          <h3>dos hospitais tinham controle eletrônico de visitantes</h3>
+          <p>Em 135 hospitais pesquisados, 52,3% disseram que os problemas de segurança ligados a visitantes ficaram mais difíceis no último ano.</p>
+          <p class="link"><b>Na VisitHosp</b>Convite, token, triagem, agenda e registro de entrada e saída ficam num só sistema, no lugar do caderno na recepção.</p>
+          <a class="src" href="https://iahssf.org/assets/IAHSS-Foundation-Visitor-Management-002.pdf">IAHSS Foundation, 2018</a>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="s" id="contato" style="padding-top:0">
+    <div class="wrap contact">
+      <div>
+        <p class="eyebrow">Contato</p>
+        <h2 style="margin-top:14px">Vamos levar a VisitHosp para o seu hospital?</h2>
+        <p>Deixe seus dados no formulário e a gente entra em contato para mostrar o sistema funcionando no seu hospital. Leva menos de um minuto.</p>
+        <div class="form-cta">
+          <a class="btn form-btn" id="form-link" href="https://tally.so/r/aOepab" target="_blank" rel="noopener">Quero conhecer a VisitHosp</a>
+          <span>Nome, instituição, cargo e e-mail. Usamos seus dados só para falar sobre a VisitHosp, conforme a LGPD.</span>
+        </div>
+      </div>
+      <div class="card-c">
+        <p class="card-c-title">Prefere falar direto?</p>
+        <dl>
+          <div><dt>E-mail</dt><dd>visithosp@gmail.com</dd></div>
+          <div><dt>Telefone / WhatsApp</dt><dd>[SEU NÚMERO]</dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>VisitHosp · Visitas seguras sempre.</span>
+    <span>Agora visitar é simples.</span>
+  </div>
+</footer>
+
+</body>
+</html>
